@@ -1,4 +1,5 @@
 <template>
+     <NavBar />
   <div class="p-4 pt-16 min-h-screen bg-gradient-to-b from-purple-50 to-white">
     <h2 class="text-xl font-semibold text-purple-700 mb-6">Nhật ký buổi tối</h2>
 
@@ -72,8 +73,10 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import NavBar from "~/components/NavBar.vue";
 
 export default defineComponent({
+  components: { NavBar },
   data() {
     return {
       gratitude: "" as string,

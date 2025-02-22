@@ -1,4 +1,5 @@
 <template>
+    <NavBar />
   <div class="p-4 pt-16">
     <h2 class="text-xl">Nhật ký buổi sáng</h2>
     <TaskHistory />
@@ -22,9 +23,10 @@
 import { defineComponent } from "vue";
 import MeditationTimer from "~/components/MeditationTimer.vue";
 import TaskHistory from "~/components/TaskHistory.vue";
+import NavBar from "~/components/NavBar.vue";
 
 export default defineComponent({
-  components: { MeditationTimer, TaskHistory },
+  components: { MeditationTimer, TaskHistory, NavBar },
   data() {
     return {
       newTask: "",

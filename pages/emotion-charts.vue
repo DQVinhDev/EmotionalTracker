@@ -1,4 +1,5 @@
 <template>
+     <NavBar />
   <div class="p-4 pt-16">
     <h2 class="text-xl">Biểu đồ cảm xúc</h2>
     <select v-model="timeRange" @change="updateChart" class="border p-2 w-full">
@@ -17,9 +18,9 @@ import { defineComponent } from "vue";
 import { Bar } from "vue-chartjs"; // Correct import
 import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
-
+import NavBar from "~/components/NavBar.vue";
 export default defineComponent({
-  components: { Bar }, // Register the Bar component
+  components: { Bar, NavBar }, // Register the Bar component
   data() {
     return {
       timeRange: "day",
