@@ -7,24 +7,27 @@
       <option value="month">Tháng</option>
       <option value="year">Năm</option>
     </select>
-    <BarChart :data="chartData" :options="chartOptions" />
+    <Bar :data="chartData" :options="chartOptions" />
+    <!-- Change BarChart to Bar -->
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import { BarChart } from 'vue-chartjs';
-import { Chart, registerables } from 'chart.js';
+import { defineComponent } from "vue";
+import { Bar } from "vue-chartjs"; // Correct import
+import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
 export default defineComponent({
-  components: { BarChart },
+  components: { Bar }, // Register the Bar component
   data() {
     return {
-      timeRange: 'day',
+      timeRange: "day",
       chartData: {
-        labels: ['Vui', 'Buồn', 'Lo lắng', 'Tức giận'],
-        datasets: [{ label: 'Cảm xúc', data: [0, 0, 0, 0], backgroundColor: '#42A5F5' }],
+        labels: ["Vui", "Buồn", "Lo lắng", "Tức giận"],
+        datasets: [
+          { label: "Cảm xúc", data: [0, 0, 0, 0], backgroundColor: "#42A5F5" },
+        ],
       },
       chartOptions: { responsive: true },
     };
@@ -34,18 +37,20 @@ export default defineComponent({
   },
   methods: {
     updateChart() {
-      const emotions = JSON.parse(localStorage.getItem('emotions') || '[]');
-      const emotionCounts = { vui: 0, buồn: 0, 'lo lắng': 0, 'tức giận': 0 };
+      const emotions = JSON.parse(localStorage.getItem("emotions") || "[]");
+      const emotionCounts = { vui: 0, buồn: 0, "lo lắng": 0, "tức giận": 0 };
       emotions.forEach((e: any) => {
-        if (emotionCounts[e.emotion as keyof typeof emotionCounts] !== undefined) {
+        if (
+          emotionCounts[e.emotion as keyof typeof emotionCounts] !== undefined
+        ) {
           emotionCounts[e.emotion as keyof typeof emotionCounts]++;
         }
       });
       this.chartData.datasets[0].data = [
         emotionCounts.vui,
         emotionCounts.buồn,
-        emotionCounts['lo lắng'],
-        emotionCounts['tức giận'],
+        emotionCounts["lo lắng"],
+        emotionCounts["tức giận"],
       ];
     },
   },
