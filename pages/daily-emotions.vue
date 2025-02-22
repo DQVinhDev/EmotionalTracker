@@ -6,18 +6,30 @@
     </h2>
 
     <!-- Tiến trình ngày -->
-    <div class="mb-6 bg-white p-3 rounded-lg shadow-sm flex items-center justify-between">
-      <p class="text-sm text-gray-600">Hôm nay: {{ completedTasks }}/{{ totalTasks }} nhiệm vụ</p>
+    <div
+      class="mb-6 bg-white p-3 rounded-lg shadow-sm flex items-center justify-between"
+    >
+      <p class="text-sm text-gray-600">
+        Hôm nay: {{ completedTasks }}/{{ totalTasks }} nhiệm vụ
+      </p>
       <div class="w-1/2 h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div :style="{ width: progressPercentage + '%' }" class="h-full bg-green-500"></div>
+        <div
+          :style="{ width: progressPercentage + '%' }"
+          class="h-full bg-green-500"
+        ></div>
       </div>
     </div>
 
     <!-- Form chính -->
-    <form @submit.prevent="saveEntry" class="space-y-4 bg-white p-4 rounded-lg shadow-sm">
+    <form
+      @submit.prevent="saveEntry"
+      class="space-y-4 bg-white p-4 rounded-lg shadow-sm"
+    >
       <!-- Chọn cảm xúc -->
       <div>
-        <label class="block text-sm font-medium text-gray-700">Bạn đang cảm thấy gì?</label>
+        <label class="block text-sm font-medium text-gray-700"
+          >Bạn đang cảm thấy gì?</label
+        >
         <div class="flex gap-2 mt-1 flex-wrap">
           <button
             v-for="emo in emotions"
@@ -25,7 +37,9 @@
             @click.prevent="emotion = emo.value"
             :class="[
               'p-2 rounded-lg text-sm',
-              emotion === emo.value ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700',
+              emotion === emo.value
+                ? 'bg-green-500 text-white'
+                : 'bg-gray-100 text-gray-700',
             ]"
           >
             {{ emo.label }}
@@ -35,7 +49,9 @@
 
       <!-- Cường độ cảm xúc -->
       <div v-if="emotion">
-        <label class="block text-sm font-medium text-gray-700">Cảm xúc mạnh đến mức nào?</label>
+        <label class="block text-sm font-medium text-gray-700"
+          >Cảm xúc mạnh đến mức nào?</label
+        >
         <input
           v-model.number="intensity"
           type="range"
@@ -50,16 +66,42 @@
         </div>
       </div>
 
-      <!-- Lý do và Giá trị (ACT) -->
+      <!-- Lý do (ACT) với Voice-to-Text -->
       <div v-if="emotion" class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">Điều gì khiến bạn cảm thấy vậy?</label>
-        <textarea
-          v-model="reason"
-          placeholder="Ví dụ: Tôi lo lắng vì deadline gần đến..."
-          class="border p-2 w-full rounded mt-1 text-sm focus:ring-green-500 focus:border-green-500"
-          rows="2"
-        ></textarea>
-        <label class="block text-sm font-medium text-gray-700">Việc này liên quan đến giá trị nào của bạn?</label>
+        <label class="block text-sm font-medium text-gray-700"
+          >Điều gì khiến bạn cảm thấy vậy?</label
+        >
+        <div class="relative">
+          <textarea
+            v-model="reason"
+            placeholder="Ví dụ: Tôi lo lắng vì deadline gần đến..."
+            class="border p-2 w-full rounded mt-1 text-sm focus:ring-green-500 focus:border-green-500 pr-10"
+            rows="2"
+          ></textarea>
+          <button
+            @click.prevent="startSpeechRecognition('reason')"
+            :class="[
+              'absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-full',
+              isRecognizing && currentField === 'reason'
+                ? 'bg-red-500'
+                : 'bg-green-500',
+            ]"
+            title="Nhấn để nói"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6.1 6c0 3-2.54 5.1-5.1 5.1S6.9 14 6.9 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.9z"
+              />
+            </svg>
+          </button>
+        </div>
+        <label class="block text-sm font-medium text-gray-700"
+          >Việc này liên quan đến giá trị nào của bạn?</label
+        >
         <select
           v-model="value"
           class="border p-2 w-full rounded text-sm focus:ring-green-500 focus:border-green-500"
@@ -71,34 +113,106 @@
         </select>
       </div>
 
-      <!-- Nhiệm vụ nhỏ (SMART & Tiếp xúc Dần dần) -->
+      <!-- Nhiệm vụ nhỏ (SMART) với Voice-to-Text -->
       <div v-if="value" class="bg-green-50 p-3 rounded">
-        <label class="block text-sm font-medium text-gray-700">Hành động nhỏ tiếp theo là gì?</label>
-        <input
-          v-model="task"
-          placeholder="Ví dụ: Viết 50 từ đầu tiên..."
-          class="border p-2 w-full rounded mt-1 text-sm focus:ring-green-500 focus:border-green-500"
-        />
+        <label class="block text-sm font-medium text-gray-700"
+          >Hành động nhỏ tiếp theo là gì?</label
+        >
+        <div class="relative">
+          <input
+            v-model="task"
+            placeholder="Ví dụ: Viết 50 từ đầu tiên..."
+            class="border p-2 w-full rounded mt-1 text-sm focus:ring-green-500 focus:border-green-500 pr-10"
+          />
+          <button
+            @click.prevent="startSpeechRecognition('task')"
+            :class="[
+              'absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-full',
+              isRecognizing && currentField === 'task'
+                ? 'bg-red-500'
+                : 'bg-green-500',
+            ]"
+            title="Nhấn để nói"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6.1 6c0 3-2.54 5.1-5.1 5.1S6.9 14 6.9 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.9z"
+              />
+            </svg>
+          </button>
+        </div>
         <p class="text-xs text-gray-600 mt-1 italic">Chia nhỏ để dễ bắt đầu!</p>
       </div>
 
-      <!-- CBT: Suy nghĩ và Thách thức -->
+      <!-- CBT: Suy nghĩ và Thách thức với Voice-to-Text -->
       <div v-if="task" class="space-y-2">
-        <label class="block text-sm font-medium text-gray-700">Suy nghĩ tiêu cực của bạn?</label>
-        <textarea
-          v-model="negativeThought"
-          placeholder="Ví dụ: Tôi sẽ làm tệ..."
-          class="border p-2 w-full rounded mt-1 text-sm focus:ring-green-500 focus:border-green-500"
-          rows="2"
-        ></textarea>
-        <div v-if="negativeThought" class="bg-green-50 p-3 rounded">
-          <p class="text-xs text-gray-600 italic">Suy nghĩ này có thể sai ở đâu?</p>
+        <label class="block text-sm font-medium text-gray-700"
+          >Suy nghĩ tiêu cực của bạn?</label
+        >
+        <div class="relative">
           <textarea
-            v-model="thoughtChallenge"
-            placeholder="Ví dụ: Tôi đã từng làm được trước đây..."
-            class="border p-2 w-full rounded mt-1 text-sm focus:ring-green-500 focus:border-green-500"
+            v-model="negativeThought"
+            placeholder="Ví dụ: Tôi sẽ làm tệ..."
+            class="border p-2 w-full rounded mt-1 text-sm focus:ring-green-500 focus:border-green-500 pr-10"
             rows="2"
           ></textarea>
+          <button
+            @click.prevent="startSpeechRecognition('negativeThought')"
+            :class="[
+              'absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-full',
+              isRecognizing && currentField === 'negativeThought'
+                ? 'bg-red-500'
+                : 'bg-green-500',
+            ]"
+            title="Nhấn để nói"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6.1 6c0 3-2.54 5.1-5.1 5.1S6.9 14 6.9 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.9z"
+              />
+            </svg>
+          </button>
+        </div>
+        <div v-if="negativeThought" class="bg-green-50 p-3 rounded">
+          <p class="text-xs text-gray-600 italic">
+            Suy nghĩ này có thể sai ở đâu?
+          </p>
+          <div class="relative">
+            <textarea
+              v-model="thoughtChallenge"
+              placeholder="Ví dụ: Tôi đã từng làm được trước đây..."
+              class="border p-2 w-full rounded mt-1 text-sm focus:ring-green-500 focus:border-green-500 pr-10"
+              rows="2"
+            ></textarea>
+            <button
+              @click.prevent="startSpeechRecognition('thoughtChallenge')"
+              :class="[
+                'absolute right-2 top-1/2 transform -translate-y-1/2 p-1 rounded-full',
+                isRecognizing && currentField === 'thoughtChallenge'
+                  ? 'bg-red-500'
+                  : 'bg-green-500',
+              ]"
+              title="Nhấn để nói"
+            >
+              <svg
+                class="w-5 h-5 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6.1 6c0 3-2.54 5.1-5.1 5.1S6.9 14 6.9 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.9z"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -133,9 +247,14 @@
     </div>
 
     <!-- Modal phần thưởng -->
-    <div v-if="showReward" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+    <div
+      v-if="showReward"
+      class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center"
+    >
       <div class="bg-white p-4 rounded-lg shadow-lg max-w-xs text-center">
-        <p class="text-sm text-gray-700 mb-3">Chúc mừng! Bạn nhận được 10 điểm 🌟</p>
+        <p class="text-sm text-gray-700 mb-3">
+          Chúc mừng! Bạn nhận được 10 điểm 🌟
+        </p>
         <button
           @click="closeReward"
           class="bg-green-500 text-white p-2 rounded w-full text-sm hover:bg-green-700 transition"
@@ -174,11 +293,16 @@ export default defineComponent({
       totalTasks: 0 as number,
       showTimer: false as boolean,
       showReward: false as boolean,
+      isRecognizing: false as boolean,
+      currentField: "" as string,
+      recognition: null as SpeechRecognition | null,
     };
   },
   computed: {
     progressPercentage(): number {
-      return this.totalTasks ? (this.completedTasks / this.totalTasks) * 100 : 0;
+      return this.totalTasks
+        ? (this.completedTasks / this.totalTasks) * 100
+        : 0;
     },
   },
   methods: {
@@ -234,9 +358,59 @@ export default defineComponent({
       this.totalTasks = entries.length;
       this.completedTasks = entries.filter((e: any) => e.completed).length;
     },
+    startSpeechRecognition(field: string) {
+      if (!("webkitSpeechRecognition" in window)) {
+        alert("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói.");
+        return;
+      }
+
+      if (this.isRecognizing) {
+        this.recognition?.stop();
+        this.isRecognizing = false;
+        return;
+      }
+
+      this.currentField = field;
+      this.isRecognizing = true;
+
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      this.recognition = new SpeechRecognition();
+      this.recognition.lang = "vi-VN"; // Ngôn ngữ tiếng Việt
+      this.recognition.continuous = false;
+      this.recognition.interimResults = false;
+
+      this.recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (this.currentField === "reason") this.reason = transcript;
+        if (this.currentField === "task") this.task = transcript;
+        if (this.currentField === "negativeThought")
+          this.negativeThought = transcript;
+        if (this.currentField === "thoughtChallenge")
+          this.thoughtChallenge = transcript;
+        this.isRecognizing = false;
+      };
+
+      this.recognition.onerror = (event) => {
+        console.error("Lỗi nhận diện giọng nói:", event.error);
+        alert("Có lỗi xảy ra khi nhận diện giọng nói. Vui lòng thử lại.");
+        this.isRecognizing = false;
+      };
+
+      this.recognition.onend = () => {
+        this.isRecognizing = false;
+      };
+
+      this.recognition.start();
+    },
   },
   mounted() {
     this.loadProgress();
+  },
+  beforeUnmount() {
+    if (this.recognition) {
+      this.recognition.stop();
+    }
   },
 });
 </script>
