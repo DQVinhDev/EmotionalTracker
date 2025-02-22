@@ -1,10 +1,8 @@
 <template>
- 
   <div class="bg-green-50 p-6 rounded-lg shadow-md text-center">
     <h3
       class="text-lg font-semibold text-green-700 flex items-center justify-center mb-4"
     >
-      <ClockIcon class="w-6 h-6 mr-2" />
       Thiền định {{ duration }} phút
     </h3>
 
