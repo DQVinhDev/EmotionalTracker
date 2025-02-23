@@ -8,20 +8,6 @@
       Nhật ký Cảm xúc & Hành động
     </h2>
 
-    <!-- Tiến trình ngày -->
-    <div class="mb-4 bg-white p-3 rounded-lg shadow flex flex-col gap-2">
-      <p class="text-sm text-gray-600 flex items-center gap-1">
-        <span class="icon">📅</span>
-        Hôm nay: {{ completedTasks }}/{{ totalTasks }} nhiệm vụ
-      </p>
-      <div class="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-        <div
-          :style="{ width: progressPercentage + '%' }"
-          class="h-full bg-green-500 transition-all duration-300"
-        ></div>
-      </div>
-    </div>
-
     <!-- Form chính -->
     <form
       @submit.prevent="saveEntry"
@@ -120,38 +106,8 @@
         </select>
       </div>
 
-      <!-- Nhiệm vụ nhỏ (SMART) với Voice-to-Text -->
-      <div v-if="value" class="bg-green-50 p-3 rounded-lg">
-        <label
-          class="block text-sm font-medium text-gray-700 flex items-center gap-1"
-        >
-          <span class="icon">📝</span>
-          Hành động nhỏ tiếp theo là gì?
-        </label>
-        <div class="relative">
-          <input
-            v-model="task"
-            placeholder="Ví dụ: Viết 50 từ đầu tiên..."
-            class="w-full p-2 border rounded text-sm focus:ring-1 focus:ring-green-500 focus:border-green-500"
-          />
-          <button
-            @click.prevent="startSpeechRecognition('task')"
-            :class="[
-              'absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full',
-              isRecognizing && currentField === 'task'
-                ? 'bg-red-500'
-                : 'bg-green-500',
-            ]"
-            title="Nhấn để nói"
-          >
-            <span class="icon">🎤</span>
-          </button>
-        </div>
-        <p class="text-xs text-gray-600 mt-1 italic">Chia nhỏ để dễ bắt đầu!</p>
-      </div>
-
       <!-- CBT: Suy nghĩ và Thách thức với Voice-to-Text -->
-      <div v-if="task" class="space-y-2">
+      <div v-if="value" class="space-y-2">
         <label
           class="block text-sm font-medium text-gray-700 flex items-center gap-1"
         >
@@ -209,19 +165,11 @@
       <div class="grid grid-cols-2 gap-2">
         <button
           type="submit"
-          :disabled="!task"
+          :disabled="!value"
           class="bg-green-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-green-700 disabled:bg-gray-400 transition-colors flex items-center justify-center gap-1"
         >
           <span class="icon">💾</span>
-          Lưu & Thêm
-        </button>
-        <button
-          v-if="task"
-          @click.prevent="startTask"
-          class="bg-blue-600 text-white py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-1"
-        >
-          <span class="icon">⏳</span>
-          Bắt đầu
+          Lưu
         </button>
         <button
           @click.prevent="reloadForm"
@@ -232,41 +180,15 @@
         </button>
       </div>
     </form>
-
-    <!-- Đồng hồ Pomodoro nếu bắt đầu -->
-    <div v-if="showTimer" class="mt-4">
-      <MeditationTimer :duration="15" @completed="completeTask" />
-    </div>
-
-    <!-- Modal phần thưởng -->
-    <div
-      v-if="showReward"
-      class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center p-4"
-    >
-      <div
-        class="bg-white p-4 rounded-lg shadow-lg w-full max-w-sm text-center"
-      >
-        <p class="text-sm text-gray-700 mb-3">
-          Chúc mừng! Bạn nhận được 10 điểm 🌟
-        </p>
-        <button
-          @click="closeReward"
-          class="bg-green-500 text-white py-2 rounded-lg w-full text-sm font-medium hover:bg-green-700 transition-colors"
-        >
-          Tiếp tục
-        </button>
-      </div>
-    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import MeditationTimer from "~/components/MeditationTimer.vue";
 import NavBar from "~/components/NavBar.vue";
 
 export default defineComponent({
-  components: { MeditationTimer, NavBar },
+  components: { NavBar },
   data() {
     return {
       emotions: [
@@ -280,24 +202,12 @@ export default defineComponent({
       intensity: 5 as number,
       reason: "" as string,
       value: "" as string,
-      task: "" as string,
       negativeThought: "" as string,
       thoughtChallenge: "" as string,
-      completedTasks: 0 as number,
-      totalTasks: 0 as number,
-      showTimer: false as boolean,
-      showReward: false as boolean,
       isRecognizing: false as boolean,
       currentField: "" as string,
       recognition: null as SpeechRecognition | null,
     };
-  },
-  computed: {
-    progressPercentage(): number {
-      return this.totalTasks
-        ? (this.completedTasks / this.totalTasks) * 100
-        : 0;
-    },
   },
   methods: {
     saveEntry() {
@@ -307,50 +217,24 @@ export default defineComponent({
         intensity: this.intensity,
         reason: this.reason,
         value: this.value,
-        task: this.task,
         negativeThought: this.negativeThought,
         thoughtChallenge: this.thoughtChallenge,
         timestamp: new Date().toISOString(),
-        completed: false,
       };
       entries.push(entryData);
       localStorage.setItem("entries", JSON.stringify(entries));
-      this.totalTasks++;
       this.resetForm();
-    },
-    startTask() {
-      this.showTimer = true;
-    },
-    completeTask() {
-      this.showTimer = false;
-      this.completedTasks++;
-      this.showReward = true;
-      const entries = JSON.parse(localStorage.getItem("entries") || "[]");
-      const lastEntry = entries[entries.length - 1];
-      lastEntry.completed = true;
-      localStorage.setItem("entries", JSON.stringify(entries));
-    },
-    closeReward() {
-      this.showReward = false;
     },
     resetForm() {
       this.emotion = "";
       this.intensity = 5;
       this.reason = "";
       this.value = "";
-      this.task = "";
       this.negativeThought = "";
       this.thoughtChallenge = "";
-      this.showTimer = false;
-      this.showReward = false;
     },
     reloadForm() {
       this.resetForm();
-    },
-    loadProgress() {
-      const entries = JSON.parse(localStorage.getItem("entries") || "[]");
-      this.totalTasks = entries.length;
-      this.completedTasks = entries.filter((e: any) => e.completed).length;
     },
     startSpeechRecognition(field: string) {
       if (!("webkitSpeechRecognition" in window)) {
@@ -377,7 +261,6 @@ export default defineComponent({
       this.recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         if (this.currentField === "reason") this.reason = transcript;
-        if (this.currentField === "task") this.task = transcript;
         if (this.currentField === "negativeThought")
           this.negativeThought = transcript;
         if (this.currentField === "thoughtChallenge")
@@ -398,17 +281,5 @@ export default defineComponent({
       this.recognition.start();
     },
   },
-  mounted() {
-    this.loadProgress();
-  },
-  beforeUnmount() {
-    if (this.recognition) {
-      this.recognition.stop();
-    }
-  },
 });
 </script>
-
-<style scoped>
-/* Không cần thêm scoped styles vì Tailwind đã xử lý hầu hết */
-</style>
